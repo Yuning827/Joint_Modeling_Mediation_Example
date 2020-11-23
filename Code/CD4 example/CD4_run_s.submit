@@ -1,0 +1,12 @@
+#!/bin/bash
+#SBATCH --array=1-20
+#SBATCH --ntasks-per-node=16
+#SBATCH --nodes=1
+#SBATCH --time=06:00:00
+#SBATCH --mem-per-cpu=1024
+#SBATCH --job-name=TestData1
+#SBATCH --error=TestData1.%J.stdout
+#SBATCH --output=TestData1.%J.stderr
+
+module load R/4.0
+R CMD BATCH "--args $SLURM_ARRAY_TASK_ID" effect_calculation_CD4_s.R
