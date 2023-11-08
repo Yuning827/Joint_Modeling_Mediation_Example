@@ -16,7 +16,7 @@ data.gen=function(beta.0, alpha.0, eta.0, gamma.0, delta.0, var.a.0, var.e.0, n.
 	
 	a=rnorm(n.id, 0, sqrt(var.a.0))   # random effect
 	
-	mean.1=  beta.0[1] * z + a
+	mean.1=  beta.0[1] * z + a     #m(t) at baseline point
     
     censor.time= 6 + runif(n.id, 0, 2)
     y=rep(0, n.id* J)
@@ -107,7 +107,7 @@ library(flexsurv)
 
 time1=date()
 
-	filedir.1="c:\\liulei\\collaboration\\Zheng Cheng\\paper2\\data4\\"
+	filedir.1="./Code/Simulation/Setting I/simulation data I/"
 #Pathway to save simulated dataset
 
 

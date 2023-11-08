@@ -17,9 +17,9 @@ setwd("/work/unmcresit/zhengc68/Lei/data4")
 truepar<-c(0.1,0.1,0.1,0.1,1,0,1,0.2,1,0.5,1,1)
 cr<-matrix(data=NA,nrow=200,ncol=length(truepar))
 
-qq<-c(0,2,4,6,8)
-nr<-200
-tlist=c(2,4,6,8)
+qq<-c(0,2,4,6,8) #measure time of the biomarker of interest
+nr<-200          #number of sample size
+tlist=c(2,4,6,8) #time point
 
 
 med4<-function(qq,par,K,M,t,nr){
@@ -33,14 +33,23 @@ med4<-function(qq,par,K,M,t,nr){
     delta=0
     NDE<-NIE<-rep(NA,nr)
     for (xi in 1:nr){
-        lam<-stepfun(qq[2:(length(qq)-1)],as.numeric(bh[-length(bh)]))
+        lam<-stepfun(qq[2:(length(qq)-1)],as.numeric(bh[-length(bh)])) #match each measure time with baseline hazard
         ###generate potential mediator
-        t_vec=(1:K)*(t/K)
-        xt=t_vec%o%c(1)
-        mu1<-cbind(1,1,xt)%*%beta
-        mu0<-cbind(1,0,xt)%*%beta
+        ####t=observational times
+        ####Use Monte Carlo method to numerically compute the integrations for NDE and NIE. 
+        ####Choose K points 0=t0<...<tK=t and denote t_vec=(t1,...,tk) and m_vec=(m1,...,mk) where mj=m(tj).
+        ####These time points are different from actual measurement time points and K usually needs to be much larger 
+        ####than the number of measures per individual to make the approximation accurate.
+        t_vec=(1:K)*(t/K) 
+        xt=t_vec%o%c(1)           #Monte Carlo time points withing specific subgroup
+        ####mu is the mean of sampling m from multivariate normal distribution
+        ####mu=beta0_hat + beta1_hat*treatment + matrix(beta2_hat)*matrix(covariates) + beta3_hat*matrix(t) + beta4_hat*treatment*matrix(t) + a0 + a1*matrix(t)
+        mu1<-cbind(1,1,xt)%*%beta #mean in subgroup treatment=1
+        mu0<-cbind(1,0,xt)%*%beta #mean in subgroup treatment=0
+        #####variance and covariance matrix (sigma_hat^2 * Indicator(K))
         Sigma<-diag(rep(vare,K))
-        e_vec0<-mvrnorm(M,mu0,Sigma)
+        ####e(u) of samples of m from multivariate normal distribution
+        e_vec0<-mvrnorm(M,mu0,Sigma) 
         e_vec1<-mvrnorm(M,mu1,Sigma)
         
         samp_a=mvrnorm(M,c(0),Sigma_a)

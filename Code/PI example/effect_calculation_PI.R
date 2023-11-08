@@ -18,7 +18,8 @@ tlist=c(0.25*i)
 for (t in tlist){
 
 ####model 1
-par<-c(2.5240,3.1699,2.8707,2.0632,1.3762,1.8061,1.7174,1.6021,2.1489,3.9043,-0.1098,-0.03396,76.8744,-7.3243,0.7252,0.3836,337.23,12.8548,301.08,0.000862,-0.05400)
+par<-c(2.5240,3.1699,2.8707,2.0632,1.3762,1.8061,1.7174,1.6021,2.1489,3.9043,
+       -0.1098,-0.03396,76.8744,-7.3243,0.7252,0.3836,337.23,12.8548,301.08,0.000862,-0.05400)
 med1wo<-function(qq,par,K=20,M=50,t,nr){
     bh=c(par[1:10],0)
     alpha1=par[11]
@@ -29,7 +30,7 @@ med1wo<-function(qq,par,K=20,M=50,t,nr){
     gamma=par[20:21]
     NDE<-NIE<-rep(NA,nr)
     for (xi in 1:nr){
-        lam<-stepfun(qq[2:(length(qq)-1)],as.numeric(bh[-length(bh)]))
+        lam<-stepfun(qq[2:(length(qq)-1)],as.numeric(bh[-length(bh)])) 
         ###generate potential mediator
         t_vec=(1:K)*(t/K)
         xt=t_vec%o%c(1)

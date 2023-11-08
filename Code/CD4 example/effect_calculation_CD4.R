@@ -16,7 +16,7 @@ par1<-read.csv("res1.csv",header=FALSE)
 par2<-read.csv("res2.csv",header=FALSE)
 
 
-qq<-seq(0,20,by=2)
+qq<-seq(0,20,by=2) #measure time of the biomarker of interest
 
 
 tlist=i
