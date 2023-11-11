@@ -23,14 +23,14 @@ tlist=c(2,4,6,8) #time point
 
 
 med4<-function(qq,par,K,M,t,nr){
-    bh=c(par[1:4],0)
-    alpha1=par[5]
-    eta=par[10]
-    beta=par[6:8]
-    Sigma_a=matrix(data=c(par[11]),nrow=1,ncol=1)
-    vare=par[12]
-    gamma=par[9]
-    delta=0
+    bh=c(par[1:4],0)                              #baseline hazard
+    alpha1=par[5]                                 #parameter for treatment z
+    eta=par[10]                                   #parameter for mediator m
+    beta=par[6:8]                                 #parameters in longitudinal models (mixed effect models)
+    Sigma_a=matrix(data=c(par[11]),nrow=1,ncol=1) #variance of random effect
+    vare=par[12]                                  #variance of e(u) in longitudinal model for mediator
+    gamma=par[9]                                  #parameter for a in survival model
+    delta=0                                       #interaction between mediator and random variable in survival model
     NDE<-NIE<-rep(NA,nr)
     for (xi in 1:nr){
         lam<-stepfun(qq[2:(length(qq)-1)],as.numeric(bh[-length(bh)])) #match each measure time with baseline hazard
@@ -41,34 +41,41 @@ med4<-function(qq,par,K,M,t,nr){
         ####These time points are different from actual measurement time points and K usually needs to be much larger 
         ####than the number of measures per individual to make the approximation accurate.
         t_vec=(1:K)*(t/K) 
-        xt=t_vec%o%c(1)           #Monte Carlo time points withing specific subgroup
-        ####mu is the mean of sampling m from multivariate normal distribution
-        ####mu=beta0_hat + beta1_hat*treatment + matrix(beta2_hat)*matrix(covariates) + beta3_hat*matrix(t) + beta4_hat*treatment*matrix(t) + a0 + a1*matrix(t)
+        xt=t_vec%o%c(1)           #Monte Carlo time points withing specific subgroup; %o% outer product of matrix
+        ####mu is the mean of sampling m without random variable a from multivariate normal distribution
+        ####mu=beta0_hat + beta1_hat*treatment + matrix(beta2_hat)*matrix(covariates) + beta3_hat*matrix(t) + beta4_hat*treatment*matrix(t)
         mu1<-cbind(1,1,xt)%*%beta #mean in subgroup treatment=1
         mu0<-cbind(1,0,xt)%*%beta #mean in subgroup treatment=0
         #####variance and covariance matrix (sigma_hat^2 * Indicator(K))
         Sigma<-diag(rep(vare,K))
-        ####e(u) of samples of m from multivariate normal distribution
+        ####e(u) of samples of m from multivariate normal distribution with mean mu
         e_vec0<-mvrnorm(M,mu0,Sigma) 
         e_vec1<-mvrnorm(M,mu1,Sigma)
         
+        ####sampling matrix(a) from N(0, sigma_a_hat)
         samp_a=mvrnorm(M,c(0),Sigma_a)
         a<-samp_a
-        m_vec1=e_vec1+a%*%rep(1,K)
+        ####sampling matrix(m) from multivariate distribution with mean [mu + a0 + a1*matrix(t)] and variance covariance matrix
+        m_vec1=e_vec1+a%*%rep(1,K) 
         m_vec0=e_vec0+a%*%rep(1,K)
         #        tdif<-t_vec-c(0,t_vec[-length(t_vec)])
         ccum0<-ccum1<-rep(0,M)
+        ####set the interaction between the random effects a and the biomarker mediator M
         m_a=c(samp_a%*%delta)%o%rep(1,K)
         for (i in 1:M){
-            ee0<-stepfun(t_vec,c(exp(eta*m_vec0+m_a*m_vec0)[i,],0))
-            ee1<-stepfun(t_vec,c(exp(eta*m_vec1+m_a*m_vec1)[i,],0))
+            ####estimate the values related with longitudinal mediator, which will be used in the survival model.
+            ee0<-stepfun(t_vec,c(exp(eta*m_vec0+m_a*m_vec0)[i,],0)) #in treatment group 0
+            ee1<-stepfun(t_vec,c(exp(eta*m_vec1+m_a*m_vec1)[i,],0)) #in treatment group 1
             myf0<-function(u){lam(u)*ee0(u)}
             myf1<-function(u){lam(u)*ee1(u)}
-            ccum0[i]<-integrate(myf0,0,t,subdivisions=2000)$value
-            ccum1[i]<-integrate(myf1,0,t,subdivisions=2000)$value
+            #calculate the survival: integration result part!
+            ccum0[i]<-integrate(myf0,0,t,subdivisions=2000)$value #mediator related in treatment group 0
+            ccum1[i]<-integrate(myf1,0,t,subdivisions=2000)$value #mediator related in treatment group 1
         }
+        ####set the shared latent effect(random variable) used in the survival model
         surv_a=samp_a%*%gamma
-        S00<-exp(-diag(ccum0)%*%exp(c(alpha1*0)+surv_a))
+        ####calculate the survival
+        S00<-exp(-diag(ccum0)%*%exp(c(alpha1*0)+surv_a)) #
         S01<-exp(-diag(ccum1)%*%exp(c(alpha1*0)+surv_a))
         S10<-exp(-diag(ccum0)%*%exp(c(alpha1*1)+surv_a))
         S11<-exp(-diag(ccum1)%*%exp(c(alpha1*1)+surv_a))
